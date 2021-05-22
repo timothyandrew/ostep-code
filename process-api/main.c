@@ -10,27 +10,54 @@
 #include <fcntl.h>
 
 int main() {
-  int rc = fork();
-
-  if (rc < 0) {
-    fprintf(stderr, "Failed to fork!\n");
+  int pipefd[2];
+  if (pipe(pipefd) == -1) {
+    fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
     exit(1);
-  } else if (rc == 0) {
-    // Child
-    sleep(1);
-    fprintf(stderr, "Hi from child\n");
+  }
 
-    char *args[] = { "env", NULL };
-    char *env[] = { "PATH=/tmp", NULL };
-    int result = execvpe(args[0], args, env);
+  int c1 = fork();
 
-    if (result == -1) {
-      fprintf(stderr, "Failed to execute: %s\n", strerror(errno));
+  if (c1 < 0) {
+    fprintf(stderr, "Failed to fork first child!\n");
+    exit(1);
+  } 
+
+  if (c1 == 0) {
+    close(pipefd[0]);
+
+    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+      fprintf(stderr, "Failed to duplicate fd: %s\n", strerror(errno));
       exit(1);
     }
+
+    char *args[] = { "cat", "/etc/passwd", NULL };
+    execvp(args[0], args);
   } else {
-    // Parent
-    wait(NULL);
-    fprintf(stderr, "Parent exiting\n");
+    int c2 = fork();
+
+    if (c2 < 0) {
+      fprintf(stderr, "Failed to fork second child!\n");
+      exit(1);
+    } 
+
+    if (c2 == 0) {
+      close(pipefd[1]);
+
+      if (dup2(pipefd[0], STDIN_FILENO) == -1) {
+        fprintf(stderr, "Failed to duplicate fd: %s\n", strerror(errno));
+        exit(1);
+      }
+
+      char *args[] = { "grep", "tim", NULL };
+      execvp(args[0], args);
+    } else {
+      close(pipefd[0]);
+      close(pipefd[1]);
+      waitpid(c1, NULL, 0);
+      waitpid(c2, NULL, 0);
+
+      fprintf(stderr, "Parent exiting\n");
+    }
   }
 }
