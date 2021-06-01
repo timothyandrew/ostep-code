@@ -6,7 +6,7 @@
 int main() {
   int file = open("/tmp/foo.txt", O_RDONLY);
   char buf[64];
-  int iterations = 10000;
+  int iterations = 100000;
   double hz = 4199000000;
 
   unsigned long long start = __rdtsc();

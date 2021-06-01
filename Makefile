@@ -5,3 +5,6 @@ out/process-api: process-api/*.c
 
 out/lde: lde/*.c
 	gcc -o $@ $^
+
+out/address-spaces: address-spaces/*.c
+	gcc -o $@ $^
