@@ -8,3 +8,6 @@ out/lde: lde/*.c
 
 out/address-spaces: address-spaces/*.c
 	gcc -o $@ $^
+
+out/mem-syscall: mem-syscall/*.c
+	gcc -o $@ $^
